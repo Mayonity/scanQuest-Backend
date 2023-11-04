@@ -1,4 +1,4 @@
-const {insertCategory,getCategories,updateCategory,deleteCategory,searchCategory}=require('../models/categoriesService')
+const {insertCategory,getCategories,updateCategory,deleteCategory,searchCategory}=require('../Services/categoriesService')
 
 
 async function getAllRecords(req, res) {
@@ -28,10 +28,10 @@ async function insertRecord(req, res) {
   {
     try
     {
-      const {category_name,minimum_products}=req.body;
+      const {category_name,minimum_products, game_id}=req.body;
 
       const category_id=req.params.category_id;
-      const categoryData={category_id,category_name,minimum_products};
+      const categoryData={category_id,category_name,minimum_products, game_id};
       const result=await updateCategory(categoryData);
       res.status(200).json({message:'Category Updated Successfully'})
       

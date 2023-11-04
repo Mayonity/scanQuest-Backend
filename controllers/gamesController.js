@@ -1,4 +1,4 @@
-const {insertGame,getGames,updateGame,deleteGame,searchGames}=require('../models/gamesService')
+const {insertGame,getGames,updateGame,deleteGame,searchGames}=require('../Services/gamesService')
 
 
 async function getAllRecords(req, res) {

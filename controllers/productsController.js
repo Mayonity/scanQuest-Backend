@@ -1,6 +1,7 @@
 const { json } = require('express');
-const {getProducts,deleteProduct,searchProducts}=require('../models/productsService')
+const {getProducts,deleteProduct,searchProducts}=require('../Services/productsService')
 const path = require('path');
+const dbConnection = require('../db_connection/connection');
 const UPLOADS_FOLDER = 'uploads/';
 async function getAllRecords(req, res) {
     try {
@@ -8,7 +9,7 @@ async function getAllRecords(req, res) {
       const result = await getProducts()
   //    const imagePath = path.join(__dirname, UPLOADS_FOLDER, filename);
   result.forEach(element => {
-    element.product_image = `${req.protocol}://${req.get('host')}/images/${element.product_image}`;
+    element.image = `${req.protocol}://${req.get('host')}/uploads/${element.image}`;
   });
       res.status(200).json({ message: 'Products fetched successfully', data: result });
 
@@ -25,11 +26,24 @@ async function getAllRecords(req, res) {
   {
     try
     {
+      let image
       const product_id=req.params.product_id;
-      const {product_image}=req.body
 
-      const result=await deleteProduct(product_id,product_image);
-      res.status(200).json({message:'Record deleted successfully'});
+      const sql = `SELECT image FROM products WHERE product_id=${product_id} `;
+      dbConnection.query(
+        sql,
+        async  (err,result)=>
+        {
+          if(err)return(err);
+          console.log(result)
+          image=result[0].image
+          console.log(image)
+          const rest=await deleteProduct(product_id,image);
+          res.status(200).json({message:'Record deleted successfully'});
+        }
+      )
+     
+
     } catch(err)
     {
       console.error('Error deleting product:', err.message);
@@ -45,7 +59,7 @@ async function getAllRecords(req, res) {
       const result=await searchProducts(search_query, game_id, category_id);
      
       result.forEach(element => {
-        element.product_image = `${req.protocol}://${req.get('host')}/images/${element.product_image}`;
+        element.image = `${req.protocol}://${req.get('host')}/uploads/${element.image}`;
       });
       res.status(200).json({message:'Search done successfully', data:result});
       
