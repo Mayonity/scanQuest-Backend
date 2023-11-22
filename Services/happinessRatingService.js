@@ -2,22 +2,37 @@ const query = require("express");
 const dbConnection = require("../db_connection/connection");
 
 
-function getRatings()
-{
-    return new Promise((resolve, reject) => {
-       
-        const sql ='SELECT * FROM happiness_rating INNER JOIN games on games.game_id=happiness_rating.game_id';
-        dbConnection.query(
-          sql,
-          (err, result) => {
-            if (err) reject(err);
-            resolve(result);
+function getRatings(pageSize, pageNumber) {
+  return new Promise((resolve, reject) => {
+    const offset = (pageNumber - 1) * pageSize;
+    const sql = `
+      SELECT * FROM happiness_rating 
+      INNER JOIN games ON games.game_id = happiness_rating.game_id
+      LIMIT ${pageSize} OFFSET ${offset}
+    `;
+
+    const countSql = 'SELECT COUNT(*) AS totalRecords FROM happiness_rating INNER JOIN games ON games.game_id = happiness_rating.game_id';
+
+    dbConnection.query(sql, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        // Execute count SQL query to get total record count
+        dbConnection.query(countSql, (countErr, countResult) => {
+          if (countErr) {
+            reject(countErr);
+          } else {
+            const totalRecords = countResult.length > 0 ? countResult[0].totalRecords : 0;
+            resolve({ data: result, total_records: totalRecords });
           }
-        );
-      });
+        });
+      }
+    });
+  });
 }
 
-function insertRating(categoryData) {
+
+function insertRating(categoryData,current_page) {
   return new Promise((resolve, reject) => {
     const { rating_from, from_select, rating_to, to_select, rating_deducted, game_id  } = categoryData;
     const sql = `INSERT INTO happiness_rating (rating_from, from_select, rating_to, to_select, rating_deducted, game_id ) VALUES (${rating_from}, '${from_select}', ${rating_to}, '${to_select}', ${rating_deducted} , ${game_id})`;
@@ -25,9 +40,10 @@ function insertRating(categoryData) {
     dbConnection.query(
       sql,
       [rating_from, from_select, rating_to, to_select, rating_deducted, game_id  ],
-      (err, result) => {
+     async (err, result) => {
         if (err) reject(err);
-        resolve(result);
+         const ratingData=await getRatings(10,current_page)
+         resolve(ratingData)
       }
     );
   });
@@ -69,15 +85,23 @@ function deleteRating(rating_id)
   })
 }
 
-function searchCategory(search_query,game_id)
+function searchCategory(search_query,game_id,pageNumber)
 {
   return new Promise((resolve,reject)=>
   {
-    let sql = 'SELECT * FROM happiness_rating INNER JOIN games on games.game_id=happiness_rating.game_id';
+    let sql = `
+      SELECT * FROM happiness_rating 
+      INNER JOIN games ON games.game_id = happiness_rating.game_id 
+    `;
 
+    let countSql = `SELECT COUNT(*) AS totalRecords FROM happiness_rating 
+    INNER JOIN games ON games.game_id = happiness_rating.game_id`;
+
+    const offset = (pageNumber - 1) * 10;
     // Check if search_query or game_id is provided and add WHERE clause accordingly
     if (search_query || game_id) {
       sql += ' WHERE ';
+      countSql+=' WHERE '
       const conditions = [];
   
       if (search_query) {
@@ -89,16 +113,25 @@ function searchCategory(search_query,game_id)
       }
   
       sql += conditions.join(' AND ');
+      countSql+=conditions.join(' AND ')
+      
     }
-    dbConnection.query(
-      sql,
-      (err,result)=>
-      {
-        if(err)reject(err);
-        resolve(result);
+    sql+=`  LIMIT ${10} OFFSET ${offset} `
+    dbConnection.query(sql, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        // Execute count SQL query to get total record count
+        dbConnection.query(countSql, (countErr, countResult) => {
+          if (countErr) {
+            reject(countErr);
+          } else {
+            const totalRecords = countResult.length > 0 ? countResult[0].totalRecords : 0;
+            resolve({ data: result, total_records: totalRecords });
+          }
+        });
       }
-    )
-
+    });
     
   })
 }

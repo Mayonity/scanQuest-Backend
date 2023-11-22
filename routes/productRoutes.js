@@ -5,6 +5,7 @@ const {
   getAllRecords,
   deleteRecord,
   searchRecord,
+  getProduct
 } = require("../controllers/productsController");
 const router = express.Router();
 
@@ -27,52 +28,63 @@ const fs = require("fs").promises; // Import fs.promises
 const { insertProduct, updateProduct } = require("../Services/productsService");
 
 router.get("/get-all", getAllRecords);
+
 router.post("/insert", upload.single("image"), async (req, res) => {
   try {
-    const { name, happiness_rating, game_id, category_id, cost } = req.body; // Get other form fields
+    const {  qr_code,name, happiness_rating, game_id, category_id, cost, current_page } = req.body; // Get other form fields
     const { filename } = req.file; // Get the uploaded file name
 
     const productsData = {
+      qr_code,
       name,
       happiness_rating,
       game_id,
       category_id,
       filename,
-      cost
+      cost,
     };
 
     // Call the controller function and pass the form data and filename
 
-    const result = await insertProduct(productsData);
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${filename}`
-    res.status(200).json({ message: "Product added successfully", imageUrl:imageUrl });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-router.put(
+    const result = await insertProduct(productsData,current_page);
+  
+    result.data.forEach(element => {
+      element.image = `${req.protocol}://${req.get('host')}/uploads/${element.image}`;
+    });
+        res.status(200).json({ message: 'Product added successfully', data: result });
+        
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({error:"Error adding poduct. Please refresh the page and try again."});
+      }
+    });
+    
+    router.put(
   "/update/:product_id",
   upload.single("image"),
   async (req, res) => {
     try {
       const product_id = req.params.product_id; // Extract the entity ID from the URL params
-      const { filename } = req.file; // The new file object
+      if(req.file)
+      {
 
-      const sql = `SELECT product_image from products WHERE product_id=${product_id}`;
-      dbConnection.query(sql, async (err, result) => {
+        const { filename } = req.file; // The new file object
+        
+        const result= await  getProductbyId(product_id)
+        
+        console.log(result)
         if (result[0].image) {
           const existingFilePath = `uploads/${result[0].image}`;
           await fs.rm(existingFilePath); // Delete the existing file
-
+          
           const { name,
             happiness_rating,
             game_id,
             category_id,
-            cost
-             } =
-            req.body;
+            cost,
+            qr_code
+          } =
+          req.body;
           const productsData = {
             product_id,
             name,
@@ -80,21 +92,66 @@ router.put(
             game_id,
             category_id,
             filename,
-            cost
+            cost,
+            qr_code
           };
 
           await updateProduct(productsData);
-
-          res.status(200).json({ message: "Record updated successfully!" });
+          
+          res.status(200).json({ message: "Record updated successfully!" , url: `${req.protocol}://${req.get('host')}/uploads/${filename}`});
         }
-      });
-    } catch (error) {
+      }
+      else
+      {
+      
+        const { name,
+          happiness_rating,
+          game_id,
+          category_id,
+          cost,
+          qr_code,
+          image
+        } =
+        req.body;
+        const filename=image.split('/uploads/')[1]
+        const productsData = {
+          product_id,
+          name,
+          happiness_rating,
+          game_id,
+          category_id,
+          filename,
+          cost,
+          qr_code
+        };
+
+        await updateProduct(productsData);
+        
+        res.status(200).json({ message: "Record updated successfully!" , url: `${req.protocol}://${req.get('host')}/uploads/${filename}`});
+   
+      }
+        
+      } catch (error) {
       console.error("Error updating file:", error);
-      res.status(500).send("Internal Server Error");
+      res.status(500).json({error:"Error updating products. Please refresh the page and try again."});
     }
   }
 );
 router.delete("/delete/:product_id", deleteRecord);
 router.post("/search", searchRecord);
+router.get('/get-product',getProduct)
 
+
+const getProductbyId=(id)=>
+{
+  
+  return new Promise((resolve, reject) => {
+ 
+  const sql = `SELECT image from products WHERE product_id=${id}`;
+  dbConnection.query(sql, async (err, result) => {
+    if(err)return reject(err);
+    return resolve(result)
+  })
+  })
+    }
 module.exports = router;
