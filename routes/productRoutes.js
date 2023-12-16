@@ -25,7 +25,7 @@ const upload = multer({ storage: storage });
 const dbConnection = require("../db_connection/connection");
 const fs = require("fs").promises; // Import fs.promises
 
-const { insertProduct, updateProduct } = require("../Services/productsService");
+const { insertProduct, updateProduct, checkUniqueQrCode } = require("../Services/productsService");
 
 router.get("/get-all", getAllRecords);
 
@@ -46,12 +46,24 @@ router.post("/insert", upload.single("image"), async (req, res) => {
 
     // Call the controller function and pass the form data and filename
 
-    const result = await insertProduct(productsData,current_page);
-  
-    result.data.forEach(element => {
-      element.image = `${req.protocol}://${req.get('host')}/uploads/${element.image}`;
-    });
-        res.status(200).json({ message: 'Product added successfully', data: result });
+    const isUnique=await checkUniqueQrCode(qr_code);
+
+    if(!isUnique)
+    {
+      res.status(400).json({error:'QR code already exists!'})
+    }
+
+    else
+    {
+
+      
+      const result = await insertProduct(productsData,current_page);
+      
+      result.data.forEach(element => {
+        element.image = `${req.protocol}://${req.get('host')}/uploads/${element.image}`;
+      });
+      res.status(200).json({ message: 'Product added successfully', data: result });
+    }
         
       } catch (error) {
         console.error(error);
@@ -67,24 +79,28 @@ router.post("/insert", upload.single("image"), async (req, res) => {
       const product_id = req.params.product_id; // Extract the entity ID from the URL params
       if(req.file)
       {
-
+        
         const { filename } = req.file; // The new file object
-        
-        const result= await  getProductbyId(product_id)
-        
-        console.log(result)
+        const { name,
+          happiness_rating,
+          game_id,
+          category_id,
+          cost,
+          qr_code
+        } =
+        req.body;
+
+      
+
+          
+          const result= await  getProductbyId(product_id)
+          
+     
         if (result[0].image) {
           const existingFilePath = `uploads/${result[0].image}`;
           await fs.rm(existingFilePath); // Delete the existing file
           
-          const { name,
-            happiness_rating,
-            game_id,
-            category_id,
-            cost,
-            qr_code
-          } =
-          req.body;
+          
           const productsData = {
             product_id,
             name,
@@ -95,12 +111,14 @@ router.post("/insert", upload.single("image"), async (req, res) => {
             cost,
             qr_code
           };
-
+          
+          
           await updateProduct(productsData);
           
           res.status(200).json({ message: "Record updated successfully!" , url: `${req.protocol}://${req.get('host')}/uploads/${filename}`});
         }
       }
+      
       else
       {
       
@@ -124,14 +142,16 @@ router.post("/insert", upload.single("image"), async (req, res) => {
           cost,
           qr_code
         };
+       
 
-        await updateProduct(productsData);
-        
-        res.status(200).json({ message: "Record updated successfully!" , url: `${req.protocol}://${req.get('host')}/uploads/${filename}`});
+          
+          await updateProduct(productsData);
+          
+          res.status(200).json({ message: "Record updated successfully!" , url: `${req.protocol}://${req.get('host')}/uploads/${filename}`});
+        }
    
       }
-        
-      } catch (error) {
+         catch (error) {
       console.error("Error updating file:", error);
       res.status(500).json({error:"Error updating products. Please refresh the page and try again."});
     }

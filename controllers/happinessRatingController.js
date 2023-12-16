@@ -1,4 +1,4 @@
-const {insertRating,getRatings,updatedRating,deleteRating,searchCategory}=require('../Services/happinessRatingService')
+const {insertRating,getRatings,updatedRating,deleteRating,searchCategory, getGameRules}=require('../Services/happinessRatingService')
 
 
 async function getAllRecords(req, res) {
@@ -88,4 +88,18 @@ async function insertRecord(req, res) {
       res.status(500).json({ error: 'Error searching happiness rating. Please refresh the page and try again.' });
     }
   }
-module.exports={insertRecord,getAllRecords,updateRecord,deleteRecord,searchRecord}
+
+  
+async function getRulesByGames(req, res) {
+  try {
+
+    const result = await getGameRules(req.params.game_id)
+   
+    res.status(200).json({ message: 'Happiness rating fetched successfully', data: result });
+  } catch (err) {
+    console.error('Error fetching records:', err.message);
+    res.status(500).json({ error: 'Error fetching happiness ratings. Please refresh the page and try again.' });
+  }
+}
+
+module.exports={insertRecord,getAllRecords,updateRecord,deleteRecord,searchRecord, getRulesByGames}

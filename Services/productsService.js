@@ -7,10 +7,10 @@ function getProducts(pageSize, pageNumber)
     return new Promise((resolve, reject) => {
       const offset = (pageNumber - 1) * pageSize;
         const sql =`SELECT * FROM products INNER JOIN games on games.game_id=products.game_id inner join
-         categories on categories.category_id=products.category_id 
+         categories on categories.category_id=products.category_id WHERE products.is_deleted=0 ORDER BY products.product_id DESC
          LIMIT ${pageSize} OFFSET ${offset}`;
          
-         const countSql='SELECT COUNT(*) AS totalRecords FROM products INNER JOIN games on games.game_id=products.game_id inner join categories on categories.category_id=products.category_id'
+         const countSql='SELECT COUNT(*) AS totalRecords FROM products INNER JOIN games on games.game_id=products.game_id inner join categories on categories.category_id=products.category_id WHERE products.is_deleted=0'
 
        dbConnection.query(sql, (err, result) => {
       if (err) {
@@ -40,14 +40,14 @@ function insertProduct(productsData,pageNumber) {
       category_id,
       filename,
     cost}=productsData
-    const sql = `INSERT INTO products (qr_code,image ,name, happiness_rating ,game_id, category_id,cost) VALUES ('${ qr_code}','${filename}','${name}', '${happiness_rating}' , ${game_id}, ${category_id}, ${cost})`;
+    const sql = `INSERT INTO products (qr_code,image ,name, happiness_rating ,game_id, category_id,cost, is_deleted) VALUES ('${ qr_code}','${filename}','${name}', '${happiness_rating}' , ${game_id}, ${category_id}, ${cost},0)`;
 
     dbConnection.query(
       sql,
       [qr_code,name, happiness_rating, game_id, category_id ,filename,cost],
      async (err, result) => {
         if (err) reject(err);
-        const allProducts=await getProducts(3,pageNumber)
+        const allProducts=await getProducts(10,pageNumber)
         resolve(allProducts);
       }
     );
@@ -79,7 +79,7 @@ function updateProduct(productsData)
 async function deleteProduct(product_id,product_image)
 {
 
-    const sql=`DELETE FROM products WHERE product_id='${product_id}'`
+    const sql=`Update products SET is_deleted=1 WHERE product_id=${product_id}`
 
     dbConnection.query(
       sql,
@@ -87,10 +87,10 @@ async function deleteProduct(product_id,product_image)
       {
         if(err)return(err);
      
-        const segments = product_image.split('/'); // Split the URL by '/'
-        const lastSegment = segments[segments.length - 1]; // Get the last segment after the last '/'
-        const existingFilePath = `uploads/${lastSegment}`;
-        await fs.rm(existingFilePath); // Delete the existing file
+        // const segments = product_image.split('/'); // Split the URL by '/'
+        // const lastSegment = segments[segments.length - 1]; // Get the last segment after the last '/'
+        // const existingFilePath = `uploads/${lastSegment}`;
+        // await fs.rm(existingFilePath); // Delete the existing file
       
       
         return(result);
@@ -128,15 +128,23 @@ function searchProducts(search_query, game_id, category_id,pageNumber)
       }
   
       if (category_id) {
-        conditions.push(`products.category_id = ${category_id}`);
+        conditions.push(`products.category_id = ${category_id} `);
       }
   
+      conditions.push('is_deleted=0 ')
+
       sql += conditions.join(' AND ');
       countSql+=conditions.join(' AND ')
+    }
+    else
+    {
+      sql+=' WHERE is_deleted=0 '
+      countSql+=' WHERE is_deleted=0 '
     }
 
     sql+=` LIMIT ${10} OFFSET ${offset} `
   
+    
     dbConnection.query(sql, (err, result) => {
       if (err) {
         reject(err);
@@ -155,6 +163,23 @@ function searchProducts(search_query, game_id, category_id,pageNumber)
     
   })
 }
+function checkUniqueQrCode(qr_code)
+{
+  
+  return new Promise((resolve, reject) => {
+ 
+    const sql = `SELECT * FROM products WHERE qr_code='${qr_code}'`
+     
+     dbConnection.query(sql, (err, result) => {
+    if (err) {
+      reject(err);
+    } else {
+      // Execute count SQL query to get total record count
+     resolve(result.length===0)
+    }
+  });
+    });
+}
 function getCartProduct( product_id,game_id)
 {
   return new Promise((resolve, reject) => {
@@ -162,7 +187,7 @@ function getCartProduct( product_id,game_id)
     const sql = `SELECT * FROM products 
     WHERE qr_code = '${product_id}' AND game_id=${game_id}`;
 
-    console.log(product_id,game_id)
+    
      
      dbConnection.query(sql, (err, result) => {
     if (err) {
@@ -175,4 +200,4 @@ function getCartProduct( product_id,game_id)
     });
 }
 
-module.exports = { insertProduct, getProducts, updateProduct, deleteProduct, searchProducts, getCartProduct };
+module.exports = { insertProduct, getProducts, updateProduct, deleteProduct, searchProducts, getCartProduct, checkUniqueQrCode };

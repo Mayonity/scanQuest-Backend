@@ -98,7 +98,7 @@ async function deleteRecord(req, res) {
   try {
     const student_id = req.params.student_id;
 
-    console.log(typeof(student_id))
+  
     const numbersArray = student_id.split(',');
     const result = await deleteStudent(numbersArray);
     res.status(200).json({ message: "Record deleted successfully" });
@@ -110,8 +110,8 @@ async function deleteRecord(req, res) {
 
 async function searchRecord(req, res) {
   try {
-    const {search_query,game_id,student_class,current_page} = req.body;
-    const result = await searchStudent(search_query,game_id,student_class,current_page);
+    const {search_query,game_id,student_class,current_page,page_size} = req.body;
+    const result = await searchStudent(search_query,game_id,student_class,current_page,page_size);
     result.data.forEach((item, index) => {
       // Parse 'products' from string to array
       const innerJsonString = item.products.replace(/^"|"$/g, ""); // Remove surrounding double quotes
@@ -140,10 +140,7 @@ async function getAllProducts(req, res) {
 
     let { products } = req.body;
 
-    console.log(products)
-    // products = JSON.parse(products.trim());
 
-    console.log(products)
     await Promise.all(
       products.map(async (element) => {
         const productDetails = await getProductDetails(element.product_id);
@@ -175,7 +172,7 @@ async function exportRecord(req,res)
 
  
     
-    const result = await getExportedData();
+    const result = await getExportedData(req.query.game_id,req.query.search_query);
 
     result.map((element) => {
   

@@ -8,6 +8,7 @@ function getRatings(pageSize, pageNumber) {
     const sql = `
       SELECT * FROM happiness_rating 
       INNER JOIN games ON games.game_id = happiness_rating.game_id
+      ORDER BY happiness_rating.rating_id DESC
       LIMIT ${pageSize} OFFSET ${offset}
     `;
 
@@ -136,4 +137,23 @@ function searchCategory(search_query,game_id,pageNumber)
   })
 }
 
-module.exports = { insertRating, getRatings, updatedRating, deleteRating, searchCategory };
+
+function getGameRules(game_id) {
+  return new Promise((resolve, reject) => {
+   
+    const sql = `
+      SELECT * FROM happiness_rating WHERE game_id=${game_id}
+    `;
+
+   
+    dbConnection.query(sql, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+}
+
+module.exports = { insertRating, getRatings, updatedRating, deleteRating, searchCategory, getGameRules };

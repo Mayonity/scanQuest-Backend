@@ -99,14 +99,12 @@ async function insertRecord(req, res) {
 async function insertStudentFields(code_id,game_id)
   {
     try {
-      // const { label, value, type, status,code_id,game_id } = req.body;
-
+  
       const fields=await getFields(game_id)
 
-      // console.log('fields ',fields)
       fields.map(async(field,index)=>
       {
-        console.log(field)
+      
       field.code_id=code_id
       
 

@@ -5,26 +5,19 @@ const { insertField } = require("./fieldService");
 function getGames(pageSize, pageNumber) {
   return new Promise((resolve, reject) => {
     let sql = `
-      SELECT games.*, COUNT(categories.category_id) AS total_categories, COUNT(products.product_id) AS total_products  
+      SELECT games.*, 
+        (SELECT COUNT(DISTINCT category_id) FROM categories WHERE categories.game_id = games.game_id) AS total_categories,
+        (SELECT COUNT(DISTINCT CASE WHEN products.is_deleted = 0 THEN product_id END) FROM products WHERE products.game_id = games.game_id) AS total_products
       FROM games 
-      LEFT JOIN categories ON categories.game_id = games.game_id 
-      LEFT JOIN products ON products.game_id = games.game_id 
-      GROUP BY games.game_id
+      ORDER BY games.game_id DESC 
     `;
 
     let countSql = `
       SELECT COUNT(*) AS totalRecords 
-      FROM (
-        SELECT games.game_id
-        FROM games 
-        LEFT JOIN categories ON categories.game_id = games.game_id 
-        LEFT JOIN products ON products.game_id = games.game_id 
-        GROUP BY games.game_id
-      ) AS subquery
+      FROM games 
     `;
 
     if (pageSize && pageNumber && pageSize != undefined) {
-      
       const offset = (pageNumber - 1) * pageSize;
       sql += ` LIMIT ${pageSize} OFFSET ${offset}`;
       dbConnection.query(sql, (err, result) => {
@@ -42,22 +35,18 @@ function getGames(pageSize, pageNumber) {
           });
         }
       });
-    }
-    else
-    {
-
-      
+    } else {
       dbConnection.query(sql, (err, result) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(result)
-      }
-    });
-  }
-    
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    }
   });
 }
+
 
 
 function insertGame(gameData,current_page) {
@@ -71,7 +60,12 @@ function insertGame(gameData,current_page) {
       [game_name, game_objectives],
      async  (err, result) => {
         if (err) reject(err);
-        const fieldData=[
+     
+        else
+        {
+
+          
+          const fieldData=[
           {
             label:'Class',
             value:'', 
@@ -106,10 +100,11 @@ function insertGame(gameData,current_page) {
           insertField(element)
         })
      
-       const games= await getGames(10,current_page)
+        const games= await getGames(10,current_page)
        resolve(games)
       }
-    );
+    }
+      );
   });
 }
 function updateGame(gameData)
@@ -130,6 +125,26 @@ function updateGame(gameData)
 }
 
 function deleteGame(game_id)
+{
+  return new Promise((resolve,reject)=>
+  {
+    const sql=`DELETE FROM games WHERE game_id='${game_id}'`
+
+    dbConnection.query(
+      sql,
+    async  (err,result)=>
+      {
+        if(err)reject(err);
+        resolve(result)
+      }
+    )
+
+    
+  })
+}
+
+
+function resetGame(game_id)
 {
   return new Promise((resolve,reject)=>
   {
@@ -194,4 +209,4 @@ function searchGames(search_query,pageNumber) {
 }
 
 
-module.exports = { insertGame, getGames, updateGame, deleteGame, searchGames };
+module.exports = { insertGame, getGames, updateGame, deleteGame, searchGames, resetGame };

@@ -1,4 +1,4 @@
-const {insertGame,getGames,updateGame,deleteGame,searchGames}=require('../Services/gamesService')
+const {insertGame,getGames,updateGame,deleteGame,searchGames, resetGame}=require('../Services/gamesService')
 
 
 async function getAllRecords(req, res) {
@@ -17,11 +17,29 @@ async function insertRecord(req, res) {
     try {
       const { game_name, game_objectives } = req.body.gameRecord;
       const gameData = { game_name, game_objectives };
-      const result = await insertGame(gameData,req.body.current_page)
-      res.status(201).json({ message: 'Game created successfully', data:result });
-    } catch (err) {
-      console.error('Error creating game:', err.message);
-      res.status(500).json({ error: 'Error adding game. Please refresh the page and try again.' });
+      if(game_objectives.length>2000)
+      {
+        throw new Error('Game Objectives exceeds the character limit');
+      }
+      else
+      {
+
+        const result = await insertGame(gameData,req.body.current_page)
+        res.status(201).json({ message: 'Game created successfully', data:result });
+      }
+      } catch (err) {
+        if(err.errno===1062)
+        {
+          console.error('Error creating game:', err);
+          
+      res.status(500).json({ error: 'Game Name already exists.' });
+
+        }
+        else
+        {
+
+          res.status(500).json({ error: 'Error adding game. Please refresh the page and try again.' });
+        }
     }
   }
 
@@ -50,7 +68,7 @@ async function insertRecord(req, res) {
       const game_id=req.params.game_id;
 
       const result=await deleteGame(game_id);
-      res.status(200).json({message:'Game reset successfully'});
+      res.status(200).json({message:'Game Deleted successfully'});
     } catch(err)
     {
       console.error('Error deleting game:', err.message);
@@ -58,6 +76,20 @@ async function insertRecord(req, res) {
     }
   }
 
+  async function resetRecord(req,res)
+  {
+    try
+    {
+      const game_id=req.params.game_id;
+
+      const result=await resetGame(game_id);
+      res.status(200).json({message:'Game reset successfully'});
+    } catch(err)
+    {
+      console.error('Error resetting game:', err.message);
+      res.status(500).json({ error: 'Error resetting game. Please refresh the page and try again.' });
+    }
+  }
   async function searchRecord(req,res)
   {
     try
@@ -74,4 +106,4 @@ async function insertRecord(req, res) {
       res.status(500).json({ error: 'Error searching games. Please refresh the page and try again.' });
     }
   }
-module.exports={insertRecord,getAllRecords,updateRecord,deleteRecord,searchRecord}
+module.exports={insertRecord,getAllRecords,updateRecord,deleteRecord,searchRecord, resetRecord}

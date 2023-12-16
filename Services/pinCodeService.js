@@ -21,7 +21,7 @@ function validateCode(codeData)
 function getPinCodes(pageSize, pageNumber)
 {
   return new Promise((resolve, reject) => {
-    let sql = 'SELECT * FROM pin_codes INNER JOIN games ON games.game_id = pin_codes.game_id';
+    let sql = 'SELECT * FROM pin_codes INNER JOIN games ON games.game_id = pin_codes.game_id ORDER BY pin_codes.code_id DESC' ;
     let countSql = 'SELECT COUNT(*) AS totalRecords FROM pin_codes INNER JOIN games ON games.game_id = pin_codes.game_id';
     
     // Check if pageSize and pageNumber are provided

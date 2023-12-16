@@ -1,10 +1,22 @@
-const {insertCategory,getCategories,updateCategory,deleteCategory,searchCategory}=require('../Services/categoriesService')
+const {insertCategory,getCategories,getCategoriesByGame,updateCategory,deleteCategory,searchCategory, getProductCategories}=require('../Services/categoriesService')
 
 
 async function getAllRecords(req, res) {
     try {
  
       const result = await getCategories(req.query.pageSize,req.query.pageNumber)
+      res.status(200).json({ message: 'Categories fetched successfully', data: result });
+    } catch (err) {
+      console.error('Error fetching categories', err.message);
+      res.status(500).json({ error: 'Error fetching categories. Please refresh the page. ' });
+    }
+  }
+
+  async function getGameCategories(req,res)
+  {
+    try {
+ 
+      const result = await getCategoriesByGame(req.params.game_id)
       res.status(200).json({ message: 'Categories fetched successfully', data: result });
     } catch (err) {
       console.error('Error fetching categories', err.message);
@@ -74,4 +86,19 @@ async function insertRecord(req, res) {
       res.status(500).json({ error: 'Error searching category. Please refresh the page and try again.' });
     }
   }
-module.exports={insertRecord,getAllRecords,updateRecord,deleteRecord,searchRecord}
+
+  async function getCategoriesForProducts(req,res)
+  {
+    try
+    {
+      const game_id=req.params.game_id;
+
+      const result=await getProductCategories(game_id);
+      res.status(200).json({message:'Game categories fetched successfully',data:result});
+    } catch(err)
+    {
+      console.error('Error fetching game categories', err.message);
+      res.status(500).json({ error: 'Error fetching game categories. Please refresh the page and try again.' });
+    }
+  }
+module.exports={insertRecord,getAllRecords,getGameCategories ,updateRecord,deleteRecord,searchRecord,getCategoriesForProducts}

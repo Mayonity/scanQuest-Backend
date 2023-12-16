@@ -6,11 +6,12 @@ function getCategories(pageSize, pageNumber ) {
 
   return new Promise((resolve, reject) => {
     let sql = `
-      SELECT categories.*,games.*, COUNT(products.product_id) AS total_products 
-      FROM categories 
-      INNER JOIN games ON games.game_id = categories.game_id 
-      LEFT JOIN products ON categories.category_id = products.category_id 
-      GROUP BY categories.category_id
+    SELECT categories.*, games.*, COUNT(products.product_id) AS total_products 
+    FROM categories 
+    INNER JOIN games ON games.game_id = categories.game_id 
+    LEFT JOIN products ON categories.category_id = products.category_id AND products.is_deleted = 0
+    GROUP BY categories.category_id 
+    ORDER BY categories.category_id DESC 
     `;
 
     let countSql = `
@@ -19,8 +20,9 @@ function getCategories(pageSize, pageNumber ) {
         SELECT categories.game_id
         FROM categories 
         INNER JOIN games ON games.game_id = categories.game_id 
-        LEFT JOIN products ON categories.category_id = products.category_id 
-        GROUP BY categories.category_id
+    LEFT JOIN products ON categories.category_id = products.category_id AND products.is_deleted = 0
+    GROUP BY categories.category_id 
+    ORDER BY categories.category_id DESC   
       ) AS subquery
     `;
 
@@ -57,6 +59,26 @@ function getCategories(pageSize, pageNumber ) {
     }
   });
 }
+});
+}
+
+function getCategoriesByGame(game_id)
+{
+  return new Promise((resolve, reject) => {
+    let sql = `
+      SELECT * from Categories
+      WHERE game_id=${game_id}
+    `;
+
+    dbConnection.query(sql, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        // Execute count SQL query to get total record count
+       resolve(result)
+      }
+    });
+
 });
 }
 
@@ -177,5 +199,24 @@ function searchCategory(search_query, game_id, pageNumber) {
   });
 }
 
+function getProductCategories(game_id)
+{
+  return new Promise((resolve,reject)=>
+  {
+    const sql=`SELECT * FROM categories INNER JOIN games on games.game_id=categories.game_id 
+    INNER JOIN products on products.category_id=categories.category_id 
+    WHERE categories.game_id=${game_id} GROUP BY products.category_id`
 
-module.exports = { insertCategory, getCategories, updateCategory, deleteCategory, searchCategory };
+    dbConnection.query(
+      sql,
+      (err,result)=>
+      {
+        if(err)reject(err);
+        resolve(result);
+      }
+    )
+
+    
+  })
+}
+module.exports = { insertCategory, getCategories, getCategoriesByGame,updateCategory, deleteCategory, searchCategory, getProductCategories };

@@ -19,7 +19,7 @@ function getFields(game_id)
 
 function insertField(fieldData) {
   return new Promise((resolve, reject) => {
-    console.log(fieldData)
+
     const { label, value, type, status, game_id } = fieldData;
     const sql = `INSERT INTO fields (label, value, type,status, game_id) VALUES ('${label}', '${value}', '${type}', '${status===true?1:0}', ${game_id})`;
 
@@ -47,7 +47,7 @@ function insertField(fieldData) {
 function updateField(fieldData)
 {
   const {field_id,label, value, type, status, game_id}=fieldData
-  console.log("fieldDa ",fieldData)
+
   return new Promise((resolve,reject)=>
   {
     const sql=`UPDATE fields SET label='${label}', value='${value}', type='${type}', status='${status===true?1:0}' WHERE field_id='${field_id}'`;
@@ -56,7 +56,7 @@ function updateField(fieldData)
      async (err,result)=>
       {
         if(err) reject(err);
-        console.log(result)
+
         const pin_codes= await getGamePinCodes(game_id)
        
         pin_codes.forEach(element => {
@@ -93,7 +93,7 @@ function deleteField(field_id)
 
 function insertStudentField(fieldData)
 {
-  console.log(fieldData)
+
   return new Promise((resolve, reject) => {
     const { label, value, type, status , code_id, field_id} = fieldData;
     const sql = `INSERT INTO student_fields (label, value, type,status, code_id, field_id) VALUES ('${label}', '${value}', '${type}', '${status===true?1:0}', ${code_id}, ${field_id})`;
@@ -114,7 +114,7 @@ function insertStudentField(fieldData)
 function updateStudentFieldsVals(fieldData)
 {
   const {id,label, value, type, status}=fieldData
-  console.log(fieldData)
+
   return new Promise((resolve,reject)=>
   {
     const sql=`UPDATE student_fields SET label='${label}', value='${value}', type='${type}', status='${status===true?1:0}' WHERE id='${id}'`;
@@ -133,7 +133,7 @@ function updateStudentFieldsVals(fieldData)
 function updateStudentFieldsValsOnPin(fieldData)
 {
   const {code_id,label, value, type, status, field_id}=fieldData
-  console.log(fieldData)
+
   return new Promise((resolve,reject)=>
   {
     const sql=`UPDATE student_fields SET label='${label}', value='${value}', type='${type}', status='${status===true?1:0}' WHERE field_id='${field_id}'`;

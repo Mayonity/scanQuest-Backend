@@ -28,9 +28,9 @@ async function validate(req,res)
 
     if(result.length>0)
     {
-     console.log(process.env.CLIENT_SECRET)
+
       const jwtToken= jwt.sign({pin_code: req.body.pin_code},process.env.CLIENT_SECRET,{ expiresIn: "1h" })
-      console.log(jwtToken)
+    
       res.status(200).json({ message: 'Authorized successfully', data: result, token:jwtToken });
     }
     else

@@ -22,6 +22,7 @@ async function getAllRecords(req, res) {
 
 
 
+ 
   async function deleteRecord(req,res)
   {
     try
@@ -35,9 +36,9 @@ async function getAllRecords(req, res) {
         async  (err,result)=>
         {
           if(err)return(err);
-          console.log(result)
+         
           image=result[0].image
-          console.log(image)
+         
           const rest=await deleteProduct(product_id,image);
           res.status(200).json({message:'Record deleted successfully'});
         }
@@ -76,7 +77,7 @@ async function getAllRecords(req, res) {
   {
     try {
  
-      console.log(req.query)
+    
       const result = await getCartProduct(req.query.product_id,req.query.game_id)
   //    const imagePath = path.join(__dirname, UPLOADS_FOLDER, filename);
   result.forEach(element => {
