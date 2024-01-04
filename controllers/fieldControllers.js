@@ -29,11 +29,11 @@ async function insertRecord(req, res) {
   {
     try
     {
-      const {label, value, type, status,game_id}=req.body;
+      const {label, value, type, status,hidden,game_id}=req.body;
 
     
       const field_id=req.params.field_id;
-      const fieldData={field_id,label, value, type, status, game_id};
+      const fieldData={field_id,label, value, type, status,hidden ,game_id};
       const result=await updateField(fieldData);
       res.status(200).json({message:'Field Updated Successfully'})
       

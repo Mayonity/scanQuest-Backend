@@ -46,11 +46,11 @@ function insertField(fieldData) {
 
 function updateField(fieldData)
 {
-  const {field_id,label, value, type, status, game_id}=fieldData
+  const {field_id,label, value, type, status,hidden,game_id}=fieldData
 
   return new Promise((resolve,reject)=>
   {
-    const sql=`UPDATE fields SET label='${label}', value='${value}', type='${type}', status='${status===true?1:0}' WHERE field_id='${field_id}'`;
+    const sql=`UPDATE fields SET label='${label}', value='${value}', type='${type}', status='${Number(status)}', hidden='${Number(hidden)}' WHERE field_id='${field_id}'`;
     dbConnection.query(
       sql,
      async (err,result)=>
@@ -132,11 +132,11 @@ function updateStudentFieldsVals(fieldData)
 
 function updateStudentFieldsValsOnPin(fieldData)
 {
-  const {code_id,label, value, type, status, field_id}=fieldData
+  const {code_id,label, value, type, status, hidden,field_id}=fieldData
 
   return new Promise((resolve,reject)=>
   {
-    const sql=`UPDATE student_fields SET label='${label}', value='${value}', type='${type}', status='${status===true?1:0}' WHERE field_id='${field_id}'`;
+    const sql=`UPDATE student_fields SET label='${label}', value='${value}', type='${type}', status='${status===true?1:0}', hidden='${hidden}' WHERE field_id='${field_id}'`;
     dbConnection.query(
       sql,
       (err,result)=>
